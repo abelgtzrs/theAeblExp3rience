@@ -15,18 +15,29 @@ router.get('/', async (req, res) => {
 // POST new greentext
 router.post('/', async (req, res) => {
   try {
-    const { title, content, volume, date, blessings } = req.body;
+    const { title, content, volume, blessings } = req.body;
 
-    const newText = await db.Greentext.create({ title, content, volume, date });
+    // 1. Create Greentext
+    const newText = await db.Greentext.create({ title, content, volume });
 
+    // 2. Process blessings with comments
     if (blessings && blessings.length > 0) {
-      const blessingInstances = await Promise.all(
-        blessings.map(async (item) => {
-          const [blessing] = await db.BlessingItem.findOrCreate({ where: { name: item } });
-          return blessing;
-        })
-      );
-      await newText.addBlessingItems(blessingInstances);
+      for (const bless of blessings) {
+        const [blessingItem] = await db.BlessingItem.findOrCreate({
+          where: { name: bless.name },
+        });
+
+        // Associate BlessingItem with Greentext
+        await newText.addBlessingItem(blessingItem);
+
+        // Add comments if they exist
+        if (bless.comment) {
+          await db.BlessingComment.create({
+            comment: bless.comment,
+            BlessingItemId: blessingItem.id,
+          });
+        }
+      }
     }
 
     res.json(newText);
