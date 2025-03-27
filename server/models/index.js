@@ -14,8 +14,12 @@ db.sequelize = sequelize;
 
 db.Greentext = require('./Greentext')(sequelize, Sequelize);
 db.BlessingItem = require('./BlessingItem')(sequelize, Sequelize);
+db.BlessingComment = require('./BlessingComment')(sequelize, Sequelize);
 
 db.Greentext.belongsToMany(db.BlessingItem, { through: 'GreentextBlessings' });
 db.BlessingItem.belongsToMany(db.Greentext, { through: 'GreentextBlessings' });
+
+db.BlessingItem.hasMany(db.BlessingComment, { onDelete: 'CASCADE' });
+db.BlessingComment.belongsTo(db.BlessingItem);
 
 module.exports = db;
